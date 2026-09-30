@@ -31,6 +31,7 @@ document.querySelectorAll('[data-gallery]').forEach((link) => {
     document.querySelector('#art-caption').textContent = link.dataset.caption;
     artDialog.showModal();
     document.body.classList.add('modal-open');
+    window.benueriaTrack?.('artwork_open', { content_name: link.dataset.title });
   });
 });
 artDialog.addEventListener('click', (event) => {
@@ -44,10 +45,24 @@ artDialog.addEventListener('close', () => {
 
 // Keep grouped disclosures exclusive in browsers predating details[name].
 document.querySelectorAll('details[name]').forEach((panel) => {
+  let wasOpen = panel.open;
   panel.addEventListener('toggle', () => {
+    const opened = panel.open && !wasOpen;
+    wasOpen = panel.open;
     if (!panel.open) return;
     document.querySelectorAll(`details[name="${panel.getAttribute('name')}"]`).forEach((other) => {
       if (other !== panel) other.open = false;
     });
+    // Initially open panels and automatic closures are not reader interactions.
+    if (opened) {
+      const label = panel.querySelector('summary').cloneNode(true);
+      const contentType = panel.getAttribute('name');
+      label.querySelectorAll(contentType === 'culture' ? 'small, .culture-index, .plus' : 'span')
+        .forEach((decoration) => decoration.remove());
+      window.benueriaTrack?.('lore_open', {
+        content_type: contentType,
+        content_name: label.textContent.trim().replace(/\s+/g, ' ')
+      });
+    }
   });
 });
